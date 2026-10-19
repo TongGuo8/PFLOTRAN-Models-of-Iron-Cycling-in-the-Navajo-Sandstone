@@ -1,0 +1,598 @@
+SIMULATION
+  SIMULATION_TYPE SUBSURFACE
+  PROCESS_MODELS
+    SUBSURFACE_FLOW flow
+      MODE TH
+    /
+    SUBSURFACE_TRANSPORT transport
+      MODE GIRT
+ /
+/   
+END
+
+SUBSURFACE
+
+#
+#=========================== discretization ===================================
+GRID
+TYPE structured
+ORIGIN 0.d0 0.d0 0.d0
+NXYZ 200  1  40
+BOUNDS
+0.d0 0.d0 0.d0
+1000 1.d0 200
+/
+END
+#
+#=========================== solver options ===================================
+NUMERICAL_METHODS FLOW
+
+TIMESTEPPER
+TS_ACCELERATION 25
+PRESSURE_CHANGE_GOVERNOR 1.d5
+TEMPERATURE_CHANGE_GOVERNOR 0.1d0
+CONCENTRATION_CHANGE_GOVERNOR 1.d-1
+/
+
+NEWTON_SOLVER 
+ATOL 1D-12
+RTOL 1D-8
+STOL 1D-12
+ITOL 1D-8
+MAX_NORM 1.d6
+MAXIMUM_NUMBER_OF_ITERATIONS 100
+MAXF 1000
+/
+END
+
+
+NUMERICAL_METHODS TRANSPORT
+skip
+TIMESTEPPER
+    TS_ACCELERATION 8
+    !MAX_STEPS 10
+   #MAXIMUM_NUMBER_OF_TIMESTEPS 0
+/
+
+NEWTON_SOLVER
+ATOL 1D-12
+RTOL 1D-12
+STOL 1D-30
+DTOL 1D15
+ITOL 1D-8
+MAXIMUM_NUMBER_OF_ITERATIONS 100
+MAXF 1000
+/
+#
+noskip
+END
+
+
+#=========================== times ============================================
+TIME
+FINAL_TIME 4d7 y #4d7
+INITIAL_TIMESTEP_SIZE 24.d0 h
+#MAXIMUM_TIMESTEP_SIZE 50.d0 y
+MAXIMUM_TIMESTEP_SIZE 1000.d0 y at 5000. y
+MAXIMUM_TIMESTEP_SIZE 5000.d0 y at 20000. y
+MAXIMUM_TIMESTEP_SIZE 2000.d0 y at 100000. y
+MAXIMUM_TIMESTEP_SIZE 5000.d0 y at 500000. y
+MAXIMUM_TIMESTEP_SIZE 10000.d0 y at 1.e6 y
+/
+
+#=========================== output options ===================================
+OUTPUT
+MASS_BALANCE_FILE
+#PERIODIC TIME 10 yr
+TOTAL_MASS_REGIONS
+  all
+/
+/
+FORMAT TECPLOT BLOCK
+#FORMAT HDF5
+PRINT_COLUMN_IDS
+TIMES y  1.0 5. 10. \
+25. 50. 75. 100. 250. 500. 750. 1000. 2500. 5000. \
+7500. 1.e4 12500. 15000. 17500. 20000. 25000. 30000. 35000. 40000. \
+55000. 50000. 60000. 70000. 80000. 90000. 100000. 200000. 300000. 400000. 500000. \
+600000. 700000. 800000. 900000. 1000000. 1500000. 2000000. 3000000. 4000000. 5000000. \
+6000000. 6500000. 6700000. 7000000. 8000000. 9000000.  10000000. 15000000. 20000000. 250000000. \
+30000000. 35000000. 40000000.
+
+VELOCITY_AT_CENTER
+VARIABLES
+POROSITY
+PERMEABILITY
+LIQUID_SATURATION
+GAS_SATURATION
+
+/
+
+OBSERVATION_FILE
+    TIMES y 1. 5. 10. \
+    25. 50. 75. 100. 250. 500. 750. 1000. 2500. 5000. \
+    7500. 1.e4 12500. 15000. 17500. 20000. 25000. 30000. 35000. 40000. \
+    55000. 50000. 60000. 70000. 80000. 90000. 100000. 250000. 500000. \
+    750000. 1000000. 1500000. 2000000. 3000000. 4000000. 5000000. \
+    6000000. 6500000. 6700000. 7000000. 8000000. 9000000. 10000000. 15000000. 20000000. 250000000. \
+    30000000. 
+    NO_PRINT_INITIAL
+    NO_PRINT_FINAL
+    VARIABLES
+      TEMPERATURE
+      POROSITY
+      PERMEABILITY
+    /
+  /
+END
+#=========================== fluid properties =================================
+CO2_DATABASE co2data0.dat
+FLUID_PROPERTY  
+LIQUID_DIFFUSION_COEFFICIENT 1.e-9  
+GAS_DIFFUSION_COEFFICIENT 2.13d-5  
+END
+#=========================== material properties ==============================
+MATERIAL_PROPERTY sandstone1 # permeable
+    ID 1
+    CHARACTERISTIC_CURVES sf1
+    PERMEABILITY_MIN_SCALE_FACTOR 0.d0
+    POROSITY 0.20d0
+    ROCK_DENSITY 2.58E3
+    THERMAL_CONDUCTIVITY_WET 3.1d0
+    HEAT_CAPACITY 830.
+    PERMEABILITY
+    PERM_X 1d-13 # ~100md
+    PERM_Y 1d-13
+    PERM_Z 1d-13
+  /
+END
+
+MATERIAL_PROPERTY sandstone2 #less permeable
+    ID 2
+    CHARACTERISTIC_CURVES sf1
+    PERMEABILITY_MIN_SCALE_FACTOR 0.d0
+    POROSITY 0.1d0
+    ROCK_DENSITY 2.58E3
+    THERMAL_CONDUCTIVITY_WET 3.1d0
+    HEAT_CAPACITY 830.
+    PERMEABILITY
+    PERM_X 1d-15 #~1 md
+    PERM_Y 1d-15
+    PERM_Z 1d-15
+  /
+END
+#=========================== characteristic curves =============================
+CHARACTERISTIC_CURVES sf1
+  SATURATION_FUNCTION VAN_GENUCHTEN
+    M 0.457
+    ALPHA  7.5d-4
+    LIQUID_RESIDUAL_SATURATION 0.15
+  /
+  PERMEABILITY_FUNCTION MUALEM_VG_LIQ
+    M 0.457
+    LIQUID_RESIDUAL_SATURATION 0.15
+  /
+END
+
+
+#=========================== regions ==========================================
+REGION all
+COORDINATES # should be consistent with bounds
+0.d0 0.d0 0.d0
+1000 1.d0  200
+/
+END
+
+
+REGION top
+FACE TOP
+COORDINATES
+0.d0 0.d0  200
+1000 1.d0 200
+/
+END
+
+REGION bottom
+FACE BOTTOM
+COORDINATES
+0.d0 0.d0 0.d0
+1000 1.d0 0.d0
+/
+END
+
+REGION west
+FACE WEST
+COORDINATES
+0.d0 0.d0 0.d0
+0.d0 1.d0 200
+/
+END
+
+REGION east
+FACE EAST
+COORDINATES
+1.d3 0.d0 0.d0
+1.d3 1.d0 200
+/
+END
+
+REGION layer1
+COORDINATES
+0.d0 0.d0 150.d0
+1000 1.d0 200.d0
+/
+END
+
+REGION layer2
+COORDINATES
+0.d0 0.d0 140.d0
+1000 1.d0 150.d0
+/
+END
+
+REGION layer3
+COORDINATES
+0.d0 0.d0 0.d0
+1000 1.d0 140.d0
+/
+END
+
+
+
+REGION obs_lp
+COORDINATE 500 0.5 70 #hp 900, 0.5, 145
+/
+
+
+#=========================== observation points ===============================
+
+OBSERVATION 
+  REGION obs_lp
+  AT_CELL_CENTER
+/
+
+#=========================== flow conditions ==================================
+FLOW_CONDITION initial
+#UNITS Pa,C,M,yr
+TYPE
+LIQUID_PRESSURE hydrostatic
+TEMPERATURE dirichlet
+/
+DATUM 0 0 700
+LIQUID_PRESSURE 101325.d0
+TEMPERATURE 15.d0
+/
+
+
+FLOW_CONDITION left_recharge
+TYPE
+LIQUID_FLUX NEUMANN
+TEMPERATURE dirichlet
+/
+LIQUID_FLUX 0.5 m/yr
+TEMPERATURE 15.d0
+/
+
+
+FLOW_CONDITION right_boundary
+TYPE 
+LIQUID_PRESSURE hydrostatic
+TEMPERATURE dirichlet
+/
+DATUM 1.5d3 1.d0 700
+LIQUID_PRESSURE 101325.d0
+TEMPERATURE 15.d0
+/
+
+#=========================== transport condition ==============================
+TRANSPORT_CONDITION initial
+  TYPE DIRICHLET_ZERO_GRADIENT
+  CONSTRAINT_LIST
+  0.d0 initial
+  /
+ END
+ 
+TRANSPORT_CONDITION inlet
+  TYPE DIRICHLET
+  TIME_UNITS yr
+  CONSTRAINT_LIST
+   0.d0 inlet
+   /
+  END
+#=========================== chemistry ========================================
+CHEMISTRY
+   PRIMARY_SPECIES
+    Ca++
+    Mg++
+    Fe++
+    Na+
+    Al+++
+    K+
+    Cl-
+    SO4--
+    SiO2(aq)
+    O2(aq)
+    CO2(aq)
+    H+
+   /
+
+
+
+    SECONDARY_SPECIES
+    CH4(aq)
+    OH-
+    HCO3-
+    CO3--
+    CaCO3(aq)
+    CaHCO3+
+    MgCO3(aq)
+    MgHCO3+
+    AlO2-
+    Al(OH)2+
+    KCl(aq)
+    HCl(aq)
+    CaCl2(aq)
+    CaCl+
+    NaCl(aq)
+    NaAlO2(aq)
+    NaHSiO3(aq)
+    NaOH(aq)
+    Fe+++
+    Fe(OH)4-
+    FeCl+
+    FeCl++
+    FeCl2(aq)
+    FeCl4--
+    FeCO3+
+  /
+  ACTIVE_GAS_SPECIES
+    GAS_TRANSPORT_IS_UNVETTED
+    CO2(g)
+    CH4(g)
+    O2(g)
+  /
+  PASSIVE_GAS_SPECIES
+    CO2(g)
+    CH4(g)
+    O2(g)
+  /
+  MINERALS
+  Calcite
+  Hematite
+  Illite
+  Quartz
+  Kaolinite
+  K-Feldspar
+  Siderite
+  /
+  MINERAL_KINETICS
+    Calcite
+    PREFACTOR
+      RATE_CONSTANT -9.81d0 mol/m^2-sec #change the rate
+      ACTIVATION_ENERGY 23500 J/mol
+    /
+    PREFACTOR
+      RATE_CONSTANT -5.3d0 mol/m^2-sec
+      ACTIVATION_ENERGY 14400 J/mol
+      PREFACTOR_SPECIES H+
+      ALPHA           1.0
+    ! BETA
+    ! ATTENUATION_COEF
+    /
+   /
+    PREFACTOR
+      RATE_CONSTANT -8.48d0 mol/m^2-sec #original -3.48
+      ACTIVATION_ENERGY 35400 J/mol
+      PREFACTOR_SPECIES CO2(aq)
+      ALPHA           1.0
+    ! BETA
+    ! ATTENUATION_COEF
+     /
+    /
+  /
+   Quartz
+      RATE_CONSTANT -13.99d0 mol/m^2-sec
+      ACTIVATION_ENERGY 87700d0 J/mol
+    /
+
+   K-Feldspar
+      PREFACTOR
+        RATE_CONSTANT -16.41d0 mol/cm^2-sec # change the rate 
+        ACTIVATION_ENERGY 38.d3 J/mol
+      /
+      PREFACTOR
+        RATE_CONSTANT -14.06d0 mol/cm^2-sec # change the rate
+        ACTIVATION_ENERGY 51.7d3 J/mol
+        PREFACTOR_SPECIES H+
+          ALPHA           0.5d0
+        ! BETA
+        ! ATTENUATION_COEF
+        /
+      /
+      PREFACTOR
+        RATE_CONSTANT -25.2d0 mol/cm^2-sec # change the rate
+        ACTIVATION_ENERGY 94.1d3 J/mol
+        PREFACTOR_SPECIES H+
+          ALPHA           -0.82d0
+        /
+      /
+    /
+   Illite
+      PREFACTOR
+        RATE_CONSTANT -12.78d0 mol/m^2-sec
+        ACTIVATION_ENERGY 35.0d3 J/mol
+      /
+      PREFACTOR
+        RATE_CONSTANT -10.98d0 mol/m^2-sec
+        ACTIVATION_ENERGY 23.6d3 J/mol
+        PREFACTOR_SPECIES H+
+          ALPHA           0.34d0
+        ! BETA
+        ! ATTENUATION_COEF
+        /
+      /
+      PREFACTOR
+        RATE_CONSTANT -16.52d0 mol/m^2-sec
+        ACTIVATION_ENERGY 58.9d3 J/mol
+        PREFACTOR_SPECIES H+
+          ALPHA           -0.40d0
+        /
+      /
+    /
+
+    Hematite
+     PREFACTOR
+        RATE_CONSTANT -14.6d0 mol/m^2-sec
+        ACTIVATION_ENERGY 66.2d3 J/mol
+      /
+      PREFACTOR
+        RATE_CONSTANT -9.39d0 mol/m^2-sec
+        ACTIVATION_ENERGY 66.2d3 J/mol
+        PREFACTOR_SPECIES H+
+          ALPHA           1.0d0
+        ! BETA
+        ! ATTENUATION_COEF
+        /
+      /
+    /
+
+    Kaolinite
+      PREFACTOR
+        RATE_CONSTANT -13.18d0 mol/m^2-sec
+        ACTIVATION_ENERGY 22.2d3 J/mol
+      /
+      PREFACTOR
+        RATE_CONSTANT -11.31d0 mol/m^2-sec
+        ACTIVATION_ENERGY 65.9d3 J/mol
+        PREFACTOR_SPECIES H+
+          ALPHA           0.78d0
+        ! BETA
+        ! ATTENUATION_COEF
+        /
+      /
+      PREFACTOR
+        RATE_CONSTANT -17.05d0 mol/m^2-sec
+        ACTIVATION_ENERGY 17.9d3 J/mol
+        PREFACTOR_SPECIES H+
+          ALPHA           -0.47d0
+        /
+      /
+    /
+
+    Siderite
+      PREFACTOR
+        RATE_CONSTANT -12.9d0 mol/m^2-sec
+        ACTIVATION_ENERGY 62.76d3 J/mol
+      /
+      PREFACTOR
+        RATE_CONSTANT -10.19d0 mol/m^2-sec 
+        ACTIVATION_ENERGY 36.1d3 J/mol
+        PREFACTOR_SPECIES H+
+          ALPHA           0.5d0
+        ! BETA
+        ! ATTENUATION_COEF
+        /
+      /
+    /  
+   / 
+  DATABASE hanford.dat
+  LOG_FORMULATION
+  ACTIVITY_COEFFICIENTS  TIMESTEP
+  UPDATE_MINERAL_SURFACE_AREA
+  UPDATE_TORTUOSITY  
+  UPDATE_POROSITY
+  UPDATE_PERMEABILITY
+  MOLAL
+  OUTPUT
+      CH4(aq)
+      PH
+      PE
+      ALL
+      TOTAL
+      MINERAL_VOLUME_FRACTION
+      MINERAL_SATURATION_INDEX
+    /
+  /
+#no skip
+#=========================== constraints ======================================
+CONSTRAINT initial  
+    CONCENTRATIONS #CHDH-6 equi with minerals in the Navajo Sandstone 
+        Ca++      1.08d-4   T
+        Mg++      9.8d-4   T
+        Fe++      3.41d-8   T
+        Na+       9.2d-4   T
+        K+        4.89d-5   T
+        Al+++     6.64e-8    T
+        Cl-       0.51d-3   T
+        SO4--     5.76d-4   T
+        SiO2(aq)  5.56d-5   T
+        O2(aq)    1.e-60    F
+        CO2(aq)   2.34d-3    T
+        H+        1.89d-9   T
+  /
+  MINERALS
+      Calcite 0.006 0.03d2 cm^2/g
+      Hematite 0.01 0.01d4 cm^2/g
+      Illite 0.03 0.47d4 cm^2/g
+      Quartz 0.7 0.02d4 cm^2/g
+      Kaolinite 0.015 1.16d4 cm^2/g
+      K-Feldspar 0.038 0.0148d2 cm^2/g
+      Siderite 0 7128 cm^2/cm^3
+  /
+  EQUILIBRATE_AT_EACH_CELL
+  
+ END
+ CONSTRAINT inlet #CHDH-6
+    CONCENTRATIONS
+        Ca++      0.12d-3   T
+        Mg++      0.44d-3   T
+        Fe++      0.02d-3   T
+        Na+       0.92d-3   T
+        K+        0.08d-3   T
+        Al+++     3.5d-7    T
+        Cl-       0.51d-3   T
+        SO4--     0.64d-3   T
+        SiO2(aq)  0.6d-4   T
+        O2(aq)    1.e-76   F #anoxic
+        CO2(aq)   0.9    T
+        H+        2.51d-7 T
+   /
+  END
+#=========================== condition couplers ===============================
+# initial condition
+INITIAL_CONDITION all
+FLOW_CONDITION initial
+TRANSPORT_CONDITION initial
+REGION all
+END
+
+BOUNDARY_CONDITION west
+FLOW_CONDITION left_recharge
+TRANSPORT_CONDITION inlet
+REGION west
+END
+
+
+BOUNDARY_CONDITION east
+FLOW_CONDITION right_boundary
+TRANSPORT_CONDITION initial
+REGION east
+END
+
+#=========================== stratigraphy couplers ============================
+STRATA
+   REGION layer1
+   MATERIAL sandstone2
+END
+
+STRATA
+   REGION layer2
+   MATERIAL sandstone1
+END
+
+STRATA
+   REGION layer3
+   MATERIAL sandstone2
+END
+
+END_SUBSURFACE
