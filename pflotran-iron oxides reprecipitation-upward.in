@@ -1,0 +1,561 @@
+SIMULATION
+  SIMULATION_TYPE SUBSURFACE
+  PROCESS_MODELS
+    SUBSURFACE_FLOW flow
+      MODE TH
+    /
+    SUBSURFACE_TRANSPORT transport
+      MODE GIRT
+ /
+/   
+END
+
+SUBSURFACE
+
+#
+#=========================== discretization ===================================
+GRID
+TYPE structured
+ORIGIN 0.d0 0.d0 0.d0
+NXYZ 80  1  40
+BOUNDS
+0.d0 0.d0 0.d0
+1000 1.d0 200
+/
+END
+#
+#=========================== solver options ===================================
+NUMERICAL_METHODS FLOW
+
+TIMESTEPPER
+TS_ACCELERATION 25
+PRESSURE_CHANGE_GOVERNOR 1.d5
+TEMPERATURE_CHANGE_GOVERNOR 0.1d0
+CONCENTRATION_CHANGE_GOVERNOR 1.d-1
+/
+
+NEWTON_SOLVER 
+ATOL 1D-12
+RTOL 1D-8
+STOL 1D-12
+ITOL 1D-8
+MAX_NORM 1.d6
+MAXIMUM_NUMBER_OF_ITERATIONS 100
+MAXF 1000
+/
+END
+
+
+NUMERICAL_METHODS TRANSPORT
+skip
+TIMESTEPPER
+    TS_ACCELERATION 8
+    !MAX_STEPS 10
+   #MAXIMUM_NUMBER_OF_TIMESTEPS 0
+/
+
+NEWTON_SOLVER
+ATOL 1D-12
+RTOL 1D-12
+STOL 1D-30
+DTOL 1D15
+ITOL 1D-8
+MAXIMUM_NUMBER_OF_ITERATIONS 100
+MAXF 1000
+/
+#
+noskip
+END
+
+
+#=========================== times ============================================
+TIME
+FINAL_TIME 2d6 y
+INITIAL_TIMESTEP_SIZE 1.d0 h
+MAXIMUM_TIMESTEP_SIZE 50.d0 y
+#MAXIMUM_TIMESTEP_SIZE 50.d0 y at 15. y
+MAXIMUM_TIMESTEP_SIZE 100.d0 y at 50. y
+MAXIMUM_TIMESTEP_SIZE 200.d0 y at 20000. y
+MAXIMUM_TIMESTEP_SIZE 500.d0 y at 50000. y
+MAXIMUM_TIMESTEP_SIZE 1000.d0 y at 100000. y
+/
+
+#=========================== output options ===================================
+OUTPUT
+MASS_BALANCE_FILE
+#PERIODIC TIME 10 yr
+TOTAL_MASS_REGIONS
+  all
+/
+/
+FORMAT TECPLOT BLOCK
+#FORMAT HDF5
+PRINT_COLUMN_IDS
+TIMES y  1.0 5. 10. \
+25. 50. 75. 100. 250. 500. 750. 1000. 2500. 5000. \
+7500. 1.e4 12500. 15000. 17500. 20000. 25000. 30000. 35000. 40000. \
+55000. 50000. 60000. 70000. 80000. 90000. 100000. 250000. 500000. \
+750000. 1000000. 2000000. 3000000. 4000000. 5000000. 6000000. 7000000.\
+8000000. 9000000. 10000000. 20000000. 30000000. 40000000. 50000000.
+
+VELOCITY_AT_CENTER
+VARIABLES
+ POROSITY
+ PERMEABILITY
+ LIQUID_SATURATION
+ GAS_SATURATION
+
+/
+
+  OBSERVATION_FILE
+    NO_PRINT_INITIAL
+    NO_PRINT_FINAL
+    TIMES y 1.0 5. 10. \
+    25. 50. 75. 100. 250. 500. 750. 1000. 2500. 5000. \
+    7500. 1.e4 12500. 15000. 17500. 20000. 25000. 30000. 35000. 40000. \
+    55000. 50000. 60000. 70000. 80000. 90000. 100000. 250000. 500000. \
+    750000. 1000000. 2000000. 3000000. 4000000. 5000000.
+    VARIABLES
+      TEMPERATURE
+      POROSITY
+      PERMEABILITY
+    /
+  /
+END
+#=========================== fluid properties =================================
+#CO2_DATABASE co2data0.dat
+FLUID_PROPERTY  
+LIQUID_DIFFUSION_COEFFICIENT 1.e-9  
+GAS_DIFFUSION_COEFFICIENT 2.13d-5  
+END
+#=========================== material properties ==============================
+MATERIAL_PROPERTY sandstone1 # upper high permeable layer
+    ID 1
+    CHARACTERISTIC_CURVES sf1
+    PERMEABILITY_MIN_SCALE_FACTOR 0.d0
+    POROSITY 0.20d0
+    ROCK_DENSITY 2.58E3
+    THERMAL_CONDUCTIVITY_WET 3.1d0
+    HEAT_CAPACITY 830.
+    PERMEABILITY
+    PERM_X 1.d-13
+    PERM_Y 1.d-13
+    PERM_Z 1.d-13
+  /
+END
+
+MATERIAL_PROPERTY sandstone2 #joint
+    ID 2
+    CHARACTERISTIC_CURVES sf1
+    PERMEABILITY_MIN_SCALE_FACTOR 0.d0
+    POROSITY 0.3d0
+    ROCK_DENSITY 2.58E3
+    THERMAL_CONDUCTIVITY_WET 3.1d0
+    HEAT_CAPACITY 830.
+    PERMEABILITY
+    PERM_X 1.0d-12
+    PERM_Y 1.0d-12
+    PERM_Z 1.0d-12
+  /
+END
+
+MATERIAL_PROPERTY sandstone3 #bottom less permeable layer
+    ID 3
+    CHARACTERISTIC_CURVES sf1
+    PERMEABILITY_MIN_SCALE_FACTOR 0.d0
+    POROSITY 0.15d0
+    ROCK_DENSITY 2.58E3
+    THERMAL_CONDUCTIVITY_WET 3.1d0
+    HEAT_CAPACITY 830.
+    PERMEABILITY
+    PERM_X 1.d-15
+    PERM_Y 1.d-15
+    PERM_Z 1.d-15
+  /
+END
+#=========================== characteristic curves =============================
+CHARACTERISTIC_CURVES sf1
+  SATURATION_FUNCTION VAN_GENUCHTEN
+    M 0.457
+    ALPHA  7.5d-4
+    LIQUID_RESIDUAL_SATURATION 0.15
+  /
+  PERMEABILITY_FUNCTION MUALEM_VG_LIQ
+    M 0.457
+    LIQUID_RESIDUAL_SATURATION 0.15
+  /
+END
+
+
+#=========================== regions ==========================================
+REGION all
+COORDINATES
+0.d0 0.d0 0.d0
+1000 1.0  200
+/
+END
+
+
+REGION top
+FACE TOP
+COORDINATES
+0.d0 0.d0  200
+1000 1.d0 200
+/
+END
+
+REGION bottom
+FACE BOTTOM
+COORDINATES
+0.d0 0.d0 0.d0
+1000 1.d0 0.d0
+/
+END
+
+REGION west
+FACE WEST
+COORDINATES
+0.d0 0.d0 0.d0
+0.d0 1.d0 200
+/
+END
+
+REGION east
+FACE EAST
+COORDINATES
+1000 0.d0 0.0
+1000 1.d0 200
+/
+END
+
+REGION bottom_fracture
+FACE BOTTOM
+   COORDINATES
+       300 0.d0 0.d0
+       301 1.d0 0.d0
+   /
+END
+
+
+REGION west_fracture
+COORDINATES
+0.d0 0.d0 100
+300 1.d0 200
+/
+END
+
+REGION east_fracture
+COORDINATES
+301 0.d0 100
+1000 1.d0 200
+/
+END
+
+
+REGION fracture1
+COORDINATES
+300 0.d0 0.d0
+301 1.d0 200
+/
+END
+
+
+
+REGION Bottom_east
+COORDINATES
+320 0.d0 0.d0
+1000 1.d0 100.d0
+/
+END
+
+REGION Bottom_west
+COORDINATES
+0.d0 0.d0 0.d0
+290 1.d0 100
+/
+END
+
+REGION obs
+COORDINATES 300.5 0 0
+/
+END
+#=========================== observation points ===============================
+OBSERVATION 
+  REGION obs
+  AT_COORDINATE
+/
+#=========================== flow conditions ==================================
+FLOW_CONDITION initial
+#UNITS Pa,C,M,yr
+TYPE
+LIQUID_PRESSURE hydrostatic
+TEMPERATURE dirichlet
+/ 
+DATUM 0.d0 0.d0 500.d0
+LIQUID_PRESSURE 101325.d0
+TEMPERATURE 20.d0
+/
+
+
+FLOW_CONDITION bottom_recharge
+UNITS Pa,C,M,yr
+TYPE
+LIQUID_FLUX NEUMANN
+TEMPERATURE dirichlet
+/
+LIQUID_FLUX 1.0 m/yr
+TEMPERATURE 20.d0
+/
+
+
+FLOW_CONDITION left_recharge
+TYPE
+LIQUID_FLUX NEUMANN
+#LIQUID_PRESSURE hydrostatic
+TEMPERATURE dirichlet
+/
+LIQUID_FLUX 0.5 m/yr
+TEMPERATURE 20.d0
+/
+
+
+FLOW_CONDITION right_boundary
+TYPE
+LIQUID_PRESSURE hydrostatic
+TEMPERATURE dirichlet
+/
+DATUM 1.d3 0.d0 5.d2
+LIQUID_PRESSURE 101325
+TEMPERATURE 20.d0
+/
+
+#=========================== transport condition ==============================
+TRANSPORT_CONDITION initial
+  TYPE DIRICHLET_ZERO_GRADIENT
+  CONSTRAINT_LIST
+  0.d0 initial
+  /
+ END
+ 
+ 
+ TRANSPORT_CONDITION inlet
+   TYPE DIRICHLET_ZERO_GRADIENT
+   CONSTRAINT_LIST
+   0.d0 inlet
+   /
+  END
+ #=========================== chemistry ========================================
+CHEMISTRY
+   PRIMARY_SPECIES
+    Ca++
+    Mg++
+    Fe++
+    Na+
+    Al+++
+    K+
+    Cl-
+    SO4--
+    SiO2(aq)
+    O2(aq)
+    HCO3-
+#    CO2(aq)
+    H+
+   /
+   SECONDARY_SPECIES
+    CO2(aq)
+    OH-
+#    HCO3-
+    CO3--
+    Fe+++
+    Fe(OH)4-
+    FeCO3+
+  /
+  ACTIVE_GAS_SPECIES
+    GAS_TRANSPORT_IS_UNVETTED
+    CO2(g)
+#    CH4(g)
+    O2(g)
+  /
+  PASSIVE_GAS_SPECIES
+    CO2(g)
+#    CH4(g)
+    O2(g)
+  /
+  MINERALS
+  Goethite
+  Quartz
+  Kaolinite
+  K-Feldspar
+  /
+  MINERAL_KINETICS
+    Quartz
+      RATE_CONSTANT -13.99d0 mol/m^2-sec
+      ACTIVATION_ENERGY 87700d0 J/mol
+    /
+    
+    Kaolinite
+      PREFACTOR
+        RATE_CONSTANT -13.18d0 mol/m^2-sec
+        ACTIVATION_ENERGY 22.2d3 J/mol
+      /
+      PREFACTOR
+        RATE_CONSTANT -11.31d0 mol/m^2-sec
+        ACTIVATION_ENERGY 65.9d3 J/mol
+        PREFACTOR_SPECIES H+
+          ALPHA           0.78d0
+        ! BETA
+        ! ATTENUATION_COEF
+        /
+      /
+      PREFACTOR
+        RATE_CONSTANT -17.05d0 mol/m^2-sec
+        ACTIVATION_ENERGY 17.9d3 J/mol
+        PREFACTOR_SPECIES H+
+          ALPHA           -0.47d0
+        /
+      /
+    /
+    
+   K-Feldspar
+      PREFACTOR
+        RATE_CONSTANT -12.41d0 mol/m^2-sec # change the rate 
+        ACTIVATION_ENERGY 38.d3 J/mol
+      /
+      PREFACTOR
+        RATE_CONSTANT -10.06d0 mol/m^2-sec # change the rate
+        ACTIVATION_ENERGY 51.7d3 J/mol
+        PREFACTOR_SPECIES H+
+          ALPHA           0.5d0
+        ! BETA
+        ! ATTENUATION_COEF
+        /
+      /
+      PREFACTOR
+        RATE_CONSTANT -21.2d0 mol/m^2-sec # change the rate
+        ACTIVATION_ENERGY 94.1d3 J/mol
+        PREFACTOR_SPECIES H+
+          ALPHA           -0.82d0
+        /
+      /
+    /    
+
+    Goethite
+      PREFACTOR
+        RATE_CONSTANT -15.24d0 mol/m^2-sec #14.94
+        ACTIVATION_ENERGY 86.5d3 J/mol
+      /
+    /
+   
+  /
+  DATABASE hanford.dat
+  LOG_FORMULATION
+  ACTIVITY_COEFFICIENTS  TIMESTEP
+  UPDATE_POROSITY
+  UPDATE_PERMEABILITY
+  UPDATE_MINERAL_SURFACE_AREA
+  MOLAL
+  OUTPUT
+      Fe+++
+      PH
+      PE
+      ALL
+      TOTAL
+      MINERAL_VOLUME_FRACTION
+      MINERAL_SATURATION_INDEX
+    /
+  /
+#=========================== constraints ======================================
+CONSTRAINT initial #GK Well
+    CONCENTRATIONS
+        Ca++      2.03d-3   T 
+        Mg++      1.81d-3   T
+        Fe++       1.79d-7   T
+        Na+       0.4d-3   T
+        K+         8.0d-5   T
+        Al+++      3.54e-7  T  
+        Cl-       0.076d-3   T
+        SO4--     2.28d-3   T
+        SiO2(aq)   0.7d-4   T 
+        O2(aq)     0.2  G O2 (g) #maximum oxygen concentration
+        HCO3-      3.18d-3  T
+        H+         7.46d0   pH
+  /
+      MINERALS
+      Goethite 0 40d4 cm^2/cm^3 # can also use 1 as SSA since goethite precipitates from 0
+      Quartz 0.7154 200 cm^2/g
+      Kaolinite 0.0219 1.16d4 cm^2/g
+      K-Feldspar 0.0174 280.5 cm^2/cm^3
+  /
+  EQUILIBRATE_AT_EACH_CELL
+ END
+  
+CONSTRAINT inlet # Reduced fluid is got from PFLOTRAN bleaching
+    CONCENTRATIONS
+        Ca++      1.20d-4   T
+        Mg++      4.39d-4  T
+        Fe++       5.0d-4   T
+        Na+       9.18d-4   T
+        K+         7.99d-5   T
+        Al+++      1.87d-6  T 
+        Cl-       5.09d-4   T
+        SO4--     6.39d-4   T
+        SiO2(aq)   0.61d-4   T
+        O2(aq)     1.e-30   G O2(g)
+        HCO3-      6.752d-2  G CO2(g) 
+        H+         5.5d0   pH
+  /
+END  
+#=========================== condition couplers ===============================
+# initial condition
+INITIAL_CONDITION all
+FLOW_CONDITION initial
+TRANSPORT_CONDITION initial
+REGION all
+END
+
+BOUNDARY_CONDITION west
+FLOW_CONDITION left_recharge
+TRANSPORT_CONDITION initial
+REGION west
+END
+
+BOUNDARY_CONDITION bottom
+FLOW_CONDITION bottom_recharge
+TRANSPORT_CONDITION inlet
+REGION bottom_fracture
+END
+
+BOUNDARY_CONDITION east
+FLOW_CONDITION right_boundary
+TRANSPORT_CONDITION initial
+REGION east
+END
+
+#=========================== stratigraphy couplers ============================
+STRATA
+   REGION west_fracture
+   MATERIAL sandstone1
+END
+
+STRATA
+   REGION east_fracture
+   MATERIAL sandstone1
+END
+
+STRATA
+   REGION fracture1
+   MATERIAL sandstone2
+END
+
+
+STRATA
+   REGION Bottom_east
+   MATERIAL sandstone3
+END
+
+STRATA
+   REGION Bottom_west
+   MATERIAL sandstone3
+END
+
+END_SUBSURFACE
